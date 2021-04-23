@@ -1,0 +1,14 @@
+Package: intSiteR
+Type: Package
+Title: Process fastq files to get precise integration site coordinates
+Version: 0.1.0
+Author: Cai Haodong
+Maintainer: The package maintainer <56673645@qq.com>
+Description: 
+    This is a script working for processing the next-generation sequencing data (illumina) from a modified protocol based on INSPIIRE pipeline. 
+    FastQ files with reads been trimmed off sequencing adaptor sequences was used for input.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: ShortRead, dplyr, data.table, Biostrings
+RoxygenNote: 7.1.1
