@@ -41,6 +41,8 @@ intBed <- function(mgBed,
                    monoSite = 50,
                    collapse = 7,
                    mixBarcode = FALSE){
+  # prohibit scientific notation
+  options(scipen = 200)
   # outdir check
   if(is.null(outdir)){
     outdir = paste0(dirname(mgBed),'/result')
@@ -65,9 +67,9 @@ intBed <- function(mgBed,
   bed = bed %>% filter(quality>20)
   bed = bed %>% mutate(
     barcode = barcTrans(substr(name,nchar(name)-5,nchar(name))),
-    insiteCode = paste0('B',barcode,':',chr,':',as.character(start),':',as.character(end),':',strand,':',
+    insiteCode = paste0('B',barcode,':',chr,':',start,':',end,':',strand,':',
                         substr(name,nchar(name)-17,nchar(name)-6)),
-    insite = paste0('chr',chr,':',ifelse(strand=='+',as.character(start),as.character(end)),':',strand)
+    insite = paste0('chr',chr,':',ifelse(strand=='+',start,end),':',strand)
   ) %>% filter(barcode!=0)
 
   barcode_table = data.frame(table(bed$barcode))
