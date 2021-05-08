@@ -17,6 +17,26 @@
 #' @param bowtie2 bowtie2 path
 #' @param samtools samtools path
 #' @param bedtools bedtools path
+#' @param mode output mode, whether by file type or by sample,
+#'     value can be 'filetype' or 'sample'
+#' @param theta a parameter controlling the looseness of filter by duplicate degree
+#' @param fThreshold the minimum duplicate degree allowed for further analysis
+#' @param monoSite a threshold that insiteCode with frequency above it
+#'     will not be filtered by breaking point
+#' @param collapse whether neighboring sites collapsed to one.
+#' @param mixBarcode whether samples with different barcodes mixed in one library.
+#'
+#' @importFrom stringr str_match
+#' @importFrom stringr str_replace
+#' @importFrom fs path
+#' @importFrom fs path_dir
+#' @importFrom fs path_file
+#' @importFrom fs dir_ls
+#' @importFrom fs file_move
+#' @importFrom fs dir_create
+#' @importFrom parallel detectCores
+#' @importFrom parallel mcmapply
+#' @importFrom dplyr `%>%`
 #'
 #' @examples
 #' if(FALSE){
@@ -40,101 +60,189 @@ intSite <- function(input,
                     ref,
                     bowtie2 = 'bowtie2',
                     samtools = 'samtools',
-                    bedtools = 'bedtools'){
-  setwd(dirname(input))
+                    bedtools = 'bedtools',
+                    mode = 'filetype',
+                    theta = 100,
+                    fThreshold = 5,
+                    monoSite = 50,
+                    collapse = 7,
+                    mixBarcode = FALSE){
+
   num_threads = parallel::detectCores()
 
-  rawfiles = dir(paste0('./',basename(input)) ,'q.gz$',full.names = TRUE)
-  fileNameCore = unique(unlist(strsplit(basename(rawfiles),'\\_R[1-2]'))[rep(c(TRUE,FALSE),length(rawfiles)/2)])
+  raw_fq1_files = dir_ls(input,regexp='.+R1.+gz')
+  raw_fq2_files = dir_ls(input,regexp='.+R2.+gz')
+  raw_r1 = str_match(raw_fq1_files,'(.+)_R1')[,2] %>% path_file()
+  raw_r2 = str_match(raw_fq1_files,'(.+)_R1')[,2] %>% path_file()
 
-  # raw data QC and merge reads
-  if(!dir.exists('./1fastp')) dir.create('./1fastp')
+  stopifnot('Please check your fastq pairs!'= raw_r1 == raw_r2)
 
-  fq1_out = paste0('./1fastp/',fileNameCore,'_R1.fq')
-  fq2_out = paste0('./1fastp/',fileNameCore,'_R2.fq')
-  mg_out = paste0('./1fastp/',fileNameCore,'_merge.fq')
+  if(mode != 'sample'){
+    if(mode != 'filetype') {
+      print('You did not choose a right output mode, it will run as filetype mode.')}
 
-  for (i in 1:length(fileNameCore)) {
-    mergeReads(fq1 = rawfiles[2*i-1],
-               fq2 = rawfiles[2*i],
-               fq1_out = fq1_out[i],
-               fq2_out = fq2_out[i],
-               mg_out = mg_out[i],
-               threads = num_threads
-    )
+    # raw data QC and merge reads
+    fp_out <- path(dirname(input),'1fastp')
+    if(!dir.exists(fp_out)) dir.create(fp_out)
+
+    mapply(mergeReads,
+           fq1 = raw_fq1_files,
+           fq2 = raw_fq2_files,
+           fq1_out = paste0(fp_out,'/',raw_r1,'_R1.fq'),
+           fq2_out = paste0(fp_out,'/',raw_r1,'_R2.fq'),
+           mg_out = paste0(fp_out,'/',raw_r1,'_merge.fq'),
+           threads = num_threads)
+
+    # trim reads
+    fa_out <- path(dirname(input),'2fasta')
+    if(!dir.exists(fa_out)) dir.create(fa_out)
+
+    mcmapply(intTrim,
+             path2fq1 = paste0(fp_out,'/',raw_r1,'_R1.fq'),
+             path2fq2 = paste0(fp_out,'/',raw_r1,'_R2.fq'),
+             path2mg = paste0(fp_out,'/',raw_r1,'_merge.fq'),
+             outdir = fa_out,
+             mc.cores = num_threads)
+
+    # align
+    sam_out <- path(dirname(input),'3sam')
+    if(!dir.exists(sam_out)) dir.create(sam_out)
+
+    mapply(alignBowtie2,
+           fa1 = dir(fa_out,'_R1.fa$',full.names = TRUE),
+           fa2 = dir(fa_out,'_R2.fa$',full.names = TRUE),
+           outdir = sam_out,
+           bowtie2 = bowtie2,
+           ref = ref,
+           threads = num_threads)
+
+    mapply(alignBowtie2,
+           fa1 = dir(fa_out,'_merge.fa$',full.names = TRUE),
+           outdir = sam_out,
+           bowtie2 = bowtie2,
+           ref = ref,
+           threads = num_threads)
+
+
+    # sam to bam
+    bam_out <- path(dirname(input),'4bam')
+    if(!dir.exists(bam_out)) dir.create(bam_out)
+
+    mcmapply(sam2bam,
+             sam = dir(sam_out,'sam$',full.names = TRUE),
+             outdir = bam_out,
+             samtools = samtools,
+             mc.cores = num_threads)
+
+    # bam to bed
+    bed_out <- path(dirname(input),'5bed')
+    if(!dir.exists(bed_out)) dir.create(bed_out)
+
+    mcmapply(bam2bed,
+             bam = dir(bam_out ,'bam$',full.names = TRUE),
+             outdir = bed_out,
+             bedtools = bedtools,
+             mc.cores = num_threads)
+
+    # process bed file
+    intsite_out <- path(dirname(input),'6intsite')
+    if(!dir.exists(intsite_out)) dir.create(intsite_out)
+
+    mcmapply(intBed,
+             mgBed = dir(bed_out,'merge.bed$',full.names = TRUE),
+             fqBed = dir(bed_out,'R1.bed$',full.names = TRUE),
+             outdir = intsite_out,
+             theta = theta,
+             fThreshold = fThreshold,
+             monoSite = monoSite,
+             collapse = collapse,
+             mixBarcode = mixBarcode,
+             mc.cores = num_threads)
+
+    file.copy(from = dir(fa_out,'.log',full.names = TRUE),
+              to = intsite_out)
+
+    file.rename(from = dir(intsite_out,full.names = TRUE),
+                to = str_replace(dir(intsite_out,full.names = TRUE),'_R1_','_'))
   }
 
+  if(mode == 'sample'){
+    dir_create(path(input,raw_r1))
+    dir_create(path(input,raw_r1,'output'))
+    dir_create(path(input,raw_r1,'result'))
+    file_move(raw_fq1_files,path(input,raw_r1))
+    file_move(raw_fq2_files,path(input,raw_r1))
 
-  # trim reads
-  if(!dir.exists('./2fasta')) dir.create('./2fasta')
+    # merge fastq reads
+    my_pwd <- path(input,raw_r1)
 
-  for (i in 1:length(fileNameCore)) {
-    intTrim(fq1_out[i],fq2_out[i],mg_out[i],outdir = './2fasta')
+    mapply(mergeReads,
+           fq1 = dir_ls(my_pwd, regexp = "_R1"),
+           fq2 = dir_ls(my_pwd, regexp = "_R2"),
+           fq1_out = paste0(my_pwd,'/output/',raw_r1,'_R1.fq'),
+           fq2_out = paste0(my_pwd,'/output/',raw_r1,'_R2.fq'),
+           mg_out = paste0(my_pwd,'/output/',raw_r1,'_merge.fq'),
+           threads = num_threads)
+
+    # trim the LTR and linker
+    mcmapply(intTrim,
+             path2fq1 = paste0(my_pwd, "/output/", raw_r1, "_R1.fq"),
+             path2fq2 = paste0(my_pwd, "/output/", raw_r1, "_R2.fq"),
+             path2mg = paste0(my_pwd, "/output/", raw_r1, "_merge.fq"),
+             outdir = paste0(my_pwd,'/output'),
+             mc.cores = num_threads)
+
+    # align
+    mcmapply(alignBowtie2,
+             fa1 = dir_ls(input, regexp = ".+R1.fa",recurse = TRUE),
+             fa2 = dir_ls(input, regexp = ".+R2.fa",recurse = TRUE),
+             outdir = path_dir(dir_ls(input, regexp = ".+R1.fa",recurse = TRUE)),
+             bowtie2 = 'bowtie2',
+             ref = ref,
+             threads = num_threads)
+
+    mcmapply(alignBowtie2,
+             fa1 = dir_ls(input, regexp = ".+merge.fa",recurse = TRUE),
+             outdir = path_dir(dir_ls(input, regexp = ".+merge.fa",recurse = TRUE)),
+             bowtie2 = 'bowtie2',
+             ref = ref,
+             threads = num_threads)
+
+    mcmapply(sam2bam,
+             sam = dir_ls(input, regexp = ".sam",recurse = TRUE),
+             outdir = path_dir(dir_ls(input, regexp =  ".sam",recurse = TRUE)),
+             samtools = 'samtools')
+
+    mcmapply(bam2bed,
+             bam = dir_ls(input, regexp = ".bam",recurse = TRUE),
+             outdir = path_dir(dir_ls(input, regexp =  ".bam",recurse = TRUE)),
+             bedtools = 'bedtools')
+
+    # parse bed files to extract integration sites
+    mcmapply(intBed,
+             mgBed = dir_ls(input, regexp = "merge.bed",recurse = TRUE),
+             fqBed = dir_ls(input, regexp = "R1.bed",recurse = TRUE),
+             outdir = fs::path(dir_ls(input, regexp = "R1.bed",recurse = TRUE) %>%
+                                 path_dir %>%
+                                 path_dir,
+                               'result'),
+             theta = theta,
+             fThreshold = fThreshold,
+             monoSite = monoSite,
+             collapse = collapse,
+             mixBarcode = mixBarcode,
+             mc.cores = num_threads)
+
+    file_move(path = dir_ls(input, regexp = "P1.log",recurse = TRUE),
+              new_path = path(dir_ls(input, regexp = "P1.log",recurse = TRUE) %>%
+                                    path_dir %>%
+                                    path_dir,
+                                  'result'))
+
+    file.rename(from = dir(path(input,raw_r1,'result'),full.names = TRUE),
+                to = str_replace(dir(path(input,raw_r1,'result'),full.names = TRUE),
+                                 '_R1_','_'))
   }
 
+ }
 
-  # align
-  if(!dir.exists('./3sam')) dir.create('./3sam')
-
-  fa_merge <- dir(paste0('./2fasta') ,'_merge.fa$',full.names = TRUE)
-  fa_r1 <-  dir(paste0('./2fasta') ,'_R1.fa$',full.names = TRUE)
-  fa_r1_corename <- unlist(strsplit(basename(fa_r1),'\\_R1'))[rep(c(TRUE,FALSE),length(fa_r1))]
-
-  for (i in 1:length(fa_r1_corename)) {
-    alignBowtie2(fa1 = paste0('./2fasta/',fa_r1_corename[i],'_R1.fa'),
-                 fa2 = paste0('./2fasta/',fa_r1_corename[i],'_R2.fa'),
-                 outdir = './3sam',
-                 bowtie2 = 'bowtie2',
-                 ref = ref,
-                 threads = num_threads)}
-
-  for (i in 1:length(fa_merge)) {
-    alignBowtie2(fa1 = fa_merge[i],
-                 outdir = './3sam',
-                 bowtie2 = 'bowtie2',
-                 ref = ref,
-                 threads = num_threads)
-  }
-
-
-  # sam to bam
-  if(!dir.exists('./4bam')) dir.create('./4bam')
-
-  samfiles <- dir(paste0('./3sam') ,'sam$',full.names = TRUE)
-
-  for (i in 1:length(samfiles)) {
-    sam2bam(sam = samfiles[i],
-            outdir = './4bam',
-            samtools = 'samtools')
-  }
-
-  # bam to bed
-
-  if(!dir.exists('./5bed')) dir.create('./5bed')
-
-  bamfiles <- dir(paste0('./4bam') ,'bam$',full.names = TRUE)
-
-  for (i in 1:length(bamfiles)) {
-    bam2bed(bam = bamfiles[i],
-            outdir = './5bed',
-            bedtools = 'bedtools')
-  }
-
-  # process bed file
-
-  if(!dir.exists('./6insite')) dir.create('./6insite')
-
-  bed_r1 <- dir(paste0('./5bed') ,'R1.bed$',full.names = TRUE)
-  bed_merge <- dir(paste0('./5bed') ,'merge.bed$',full.names = TRUE)
-  bed_corename <- unlist(strsplit(basename(bed_r1),'\\_R1'))[rep(c(TRUE,FALSE),length(bed_r1))]
-
-
-  for (i in 1:length(bed_r1)) {
-    intBed(mgBed = bed_merge,
-           fqBed = bed_r1,
-           outdir = './6insite')
-  }
-
-  file.copy(from = dir('./2fasta','.log',full.names = TRUE),
-            to   = "./6insite")
-}
