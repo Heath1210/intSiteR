@@ -42,14 +42,10 @@ intSite <- function(input,
                     samtools = 'samtools',
                     bedtools = 'bedtools'){
   setwd(dirname(input))
-
-  myfiles = dir(paste0('./',basename(input)) ,'q.gz$',full.names = TRUE)
-
-  fileNameCore = unique(unlist(strsplit(basename(myfiles),'\\_R[1-2]'))[rep(c(TRUE,FALSE),length(myfiles)/2)])
-
   num_threads = parallel::detectCores()
 
-
+  rawfiles = dir(paste0('./',basename(input)) ,'q.gz$',full.names = TRUE)
+  fileNameCore = unique(unlist(strsplit(basename(rawfiles),'\\_R[1-2]'))[rep(c(TRUE,FALSE),length(rawfiles)/2)])
 
   # raw data QC and merge reads
   if(!dir.exists('./1fastp')) dir.create('./1fastp')
@@ -59,8 +55,8 @@ intSite <- function(input,
   mg_out = paste0('./1fastp/',fileNameCore,'_merge.fq')
 
   for (i in 1:length(fileNameCore)) {
-    mergeReads(fq1 = myfiles[2*i-1],
-               fq2 = myfiles[2*i],
+    mergeReads(fq1 = rawfiles[2*i-1],
+               fq2 = rawfiles[2*i],
                fq1_out = fq1_out[i],
                fq2_out = fq2_out[i],
                mg_out = mg_out[i],
@@ -80,14 +76,20 @@ intSite <- function(input,
   # align
   if(!dir.exists('./3sam')) dir.create('./3sam')
 
-  for (i in 1:length(fileNameCore)) {
-    alignBowtie2(fa1 = paste0('./2fasta/',strsplit(basename(fq1_out[i]), "\\.")[[1]][1],'.fa'),
-                 fa2 = paste0('./2fasta/',strsplit(basename(fq2_out[i]), "\\.")[[1]][1],'.fa'),
+  fa_merge <- dir(paste0('./2fasta') ,'_merge.fa$',full.names = TRUE)
+  fa_r1 <-  dir(paste0('./2fasta') ,'_R1.fa$',full.names = TRUE)
+  fa_r1_corename <- unlist(strsplit(basename(fa_r1),'\\_R1'))[rep(c(TRUE,FALSE),length(fa_r1))]
+
+  for (i in 1:length(fa_r1_corename)) {
+    alignBowtie2(fa1 = paste0('./2fasta/',fa_r1_corename[i],'_R1.fa'),
+                 fa2 = paste0('./2fasta/',fa_r1_corename[i],'_R2.fa'),
                  outdir = './3sam',
                  bowtie2 = 'bowtie2',
                  ref = ref,
-                 threads = num_threads)
-    alignBowtie2(fa1 = paste0('./2fasta/',strsplit(basename(mg_out[i]), "\\.")[[1]][1],'.fa'),
+                 threads = num_threads)}
+
+  for (i in 1:length(fa_merge)) {
+    alignBowtie2(fa1 = fa_merge[i],
                  outdir = './3sam',
                  bowtie2 = 'bowtie2',
                  ref = ref,
@@ -98,12 +100,10 @@ intSite <- function(input,
   # sam to bam
   if(!dir.exists('./4bam')) dir.create('./4bam')
 
-  for (i in 1:length(fileNameCore)) {
-    sam2bam(sam = paste0('./3sam/',strsplit(basename(fq1_out[i]), "\\.")[[1]][1],'.sam'),
-            outdir = './4bam',
-            samtools = 'samtools')
+  samfiles <- dir(paste0('./3sam') ,'sam$',full.names = TRUE)
 
-    sam2bam(sam = paste0('./3sam/',strsplit(basename(mg_out[i]), "\\.")[[1]][1],'.sam'),
+  for (i in 1:length(samfiles)) {
+    sam2bam(sam = samfiles[i],
             outdir = './4bam',
             samtools = 'samtools')
   }
@@ -112,12 +112,10 @@ intSite <- function(input,
 
   if(!dir.exists('./5bed')) dir.create('./5bed')
 
-  for (i in 1:length(fileNameCore)) {
-    bam2bed(bam = paste0('./4bam/',strsplit(basename(fq1_out[i]), "\\.")[[1]][1],'.bam'),
-            outdir = './5bed',
-            bedtools = 'bedtools')
+  bamfiles <- dir(paste0('./4bam') ,'bam$',full.names = TRUE)
 
-    bam2bed(bam = paste0('./4bam/',strsplit(basename(mg_out[i]), "\\.")[[1]][1],'.bam'),
+  for (i in 1:length(bamfiles)) {
+    bam2bed(bam = bamfiles[i],
             outdir = './5bed',
             bedtools = 'bedtools')
   }
@@ -126,9 +124,14 @@ intSite <- function(input,
 
   if(!dir.exists('./6insite')) dir.create('./6insite')
 
-  for (i in 1:length(fileNameCore)) {
-    intBed(mgBed = paste0('./5bed/',strsplit(basename(mg_out[i]), "\\.")[[1]][1],'.bed'),
-           fqBed = paste0('./5bed/',strsplit(basename(fq1_out[i]), "\\.")[[1]][1],'.bed'),
+  bed_r1 <- dir(paste0('./5bed') ,'R1.bed$',full.names = TRUE)
+  bed_merge <- dir(paste0('./5bed') ,'merge.bed$',full.names = TRUE)
+  bed_corename <- unlist(strsplit(basename(bed_r1),'\\_R1'))[rep(c(TRUE,FALSE),length(bed_r1))]
+
+
+  for (i in 1:length(bed_r1)) {
+    intBed(mgBed = bed_merge,
+           fqBed = bed_r1,
            outdir = './6insite')
   }
 
