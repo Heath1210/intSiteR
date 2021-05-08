@@ -1,7 +1,7 @@
 Package: intSiteR
 Type: Package
 Title: Process fastq files to get precise integration site coordinates
-Version: 0.2.1
+Version: 0.2.0
 Author: Cai Haodong
 Maintainer: The package maintainer <56673645@qq.com>
 Description: 
