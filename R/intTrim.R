@@ -193,14 +193,14 @@ intTrim <- function(path2fq1,
 
   if(length(mg) !=0 ){
     writeFasta(DNAStringSet(mg_trim),
-               paste0(outdir,'/',strsplit(basename(path2mg), "\\.")[[1]][1],'.fa'))
+               paste0(outdir,'/',strsplit(basename(path2mg), "\\.f")[[1]][1],'.fa'))
   }
 
   if(length(fq1) != 0){
     writeFasta(DNAStringSet(fq1_trim),
-               paste0(outdir,'/',strsplit(basename(path2fq1), "\\.")[[1]][1],'.fa'))
+               paste0(outdir,'/',strsplit(basename(path2fq1), "\\.f")[[1]][1],'.fa'))
     writeFasta(DNAStringSet(fq2_trim),
-               paste0(outdir,'/',strsplit(basename(path2fq2), "\\.")[[1]][1],'.fa'))
+               paste0(outdir,'/',strsplit(basename(path2fq2), "\\.f")[[1]][1],'.fa'))
   }
 
   log_info = list(
@@ -210,7 +210,7 @@ intTrim <- function(path2fq1,
     reads_usable_for_sites_detection = reads_usable_for_sites_detection)
 
   fwrite(log_info,
-         paste0(outdir,'/',strsplit(basename(path2fq1), "\\.")[[1]][1],'_P1.log'),
+         paste0(outdir,'/',strsplit(basename(path2fq1), "\\.f")[[1]][1],'_P1.log'),
          sep = '\t' )
 
   log_info
