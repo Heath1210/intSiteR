@@ -1,7 +1,7 @@
 Package: intSiteR
 Type: Package
 Title: Process fastq files to get precise integration site coordinates
-Version: 0.2.0
+Version: 0.30.0
 Author: Cai Haodong
 Maintainer: The package maintainer <56673645@qq.com>
 Description: 
@@ -10,5 +10,5 @@ Description:
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: ShortRead, dplyr, data.table, Biostrings
+Imports: ShortRead, dplyr, data.table, Biostrings, fs, stringr
 RoxygenNote: 7.1.1
