@@ -35,6 +35,7 @@
 #' @importFrom ShortRead writeFasta
 #' @importFrom Biostrings width
 #' @importFrom dplyr `%>%`
+#' @importFrom data.table fwrite
 #'
 #' @export
 #'
@@ -96,34 +97,37 @@ intTrim <- function(path2fq1,
   # drop unwanted reads
   mg = mg[setdiff(mg_match_idx,mg_match_avs)]
 
-  # get the genome sequence start location in each reads
-  mg_start = unlist(vmatchPattern(LTR,substr(mg@sread,1,40))@ends)+1
+  if(length(mg)!=0) {
+    # get the genome sequence start location in each reads
+    mg_start = unlist(vmatchPattern(LTR,substr(mg@sread,1,40))@ends)+1
 
-  # get the genome sequence end location in each reads
-  mg_end = unlist(vmatchPattern(reverseComplement(linker),
-                                    substr(mg@sread,width(mg)-60,width(mg)-20))@ends)+width(mg)-length(linker)-61
+    # get the genome sequence end location in each reads
+    mg_end = unlist(vmatchPattern(reverseComplement(linker),
+                                  substr(mg@sread,width(mg)-60,width(mg)-20))@ends)+width(mg)-length(linker)-61
 
-  # the start and end locations are calculated in a vectorization way, normally have same length
-  # if not, maybe LTR or linker matched twice in one reads, so the match boundaries should be narrowed
-  stopifnot('Please adjust your strictness of matching!'=
-              length(mg_start)==length(mg_end))
+    # the start and end locations are calculated in a vectorization way, normally have same length
+    # if not, maybe LTR or linker matched twice in one reads, so the match boundaries should be narrowed
+    stopifnot('Please adjust your strictness of matching!'=
+                length(mg_start)==length(mg_end))
 
-  # trim off LTR and linker sequences in reads, keep only genome sequences
-  mg_trim = substr(mg@sread,mg_start,mg_end)
+    # trim off LTR and linker sequences in reads, keep only genome sequences
+    mg_trim = substr(mg@sread,mg_start,mg_end)
 
-  # name trimed reads the shortest unique strings of reads IDs appending with UMI sequencs
-  # normally reads IDs have two patterns: with and without barcode
-  # the length of reads ID with barcode is larger than 60
-  mg_id = data.frame(matrix(unlist(strsplit(as.character(mg@id),' ')),ncol = 3,byrow = T),
-                     stringsAsFactors = FALSE)[,1]
+    # name trimed reads the shortest unique strings of reads IDs appending with UMI sequencs
+    # normally reads IDs have two patterns: with and without barcode
+    # the length of reads ID with barcode is larger than 60
+    mg_id = data.frame(matrix(unlist(strsplit(as.character(mg@id),' ')),ncol = 3,byrow = T),
+                       stringsAsFactors = FALSE)[,1]
 
-  names(mg_trim) <- paste0(substr(mg_id,24,nchar(mg_id)),':',
-                           substr(mg@sread,mg_end+length(linker)+1,
-                                  mg_end+length(linker)+18) %>%
-                             DNAStringSet() %>%
-                             reverseComplement())
+    names(mg_trim) <- paste0(substr(mg_id,24,nchar(mg_id)),':',
+                             substr(mg@sread,mg_end+length(linker)+1,
+                                    mg_end+length(linker)+18) %>%
+                               DNAStringSet() %>%
+                               reverseComplement())
 
-  mg_trim = mg_trim[which(nchar(mg_trim)>30)]
+    mg_trim = mg_trim[which(nchar(mg_trim)>30)]
+  }
+
 
   # find out the fq1 reads that can be matched with reverse and complement LTR sequence
   fq_rc_idx = which(vcountPattern(LTR,substr(fq2@sread,1,40))==1)
@@ -158,39 +162,46 @@ intTrim <- function(path2fq1,
   fq1 = fq1[setdiff(fq_match_idx,fq_match_avs)]
   fq2 = fq2[setdiff(fq_match_idx,fq_match_avs)]
 
-  # get the genome sequence start and end location in fq1, fq2 reads
-  fq_start = unlist(vmatchPattern(LTR,substr(fq1@sread,1,40))@ends)+1
-  fq_end = unlist(vmatchPattern(linker,substr(fq2@sread,20,60))@ends)+20
+  if(length(fq1)!=0){
+    # get the genome sequence start and end location in fq1, fq2 reads
+    fq_start = unlist(vmatchPattern(LTR,substr(fq1@sread,1,40))@ends)+1
+    fq_end = unlist(vmatchPattern(linker,substr(fq2@sread,20,60))@ends)+20
 
-  stopifnot('Please adjust your strictness of matching!' =
-              length(fq_start) == length(fq_end))
+    stopifnot('Please adjust your strictness of matching!' =
+                length(fq_start) == length(fq_end))
 
-  # trim off LTR and linker sequences ,get genome sequences and UMI
-  fq1_trim = substr(fq1@sread,fq_start,width(fq1))
-  fq2_trim = substr(fq2@sread,fq_end,width(fq2))
+    # trim off LTR and linker sequences ,get genome sequences and UMI
+    fq1_trim = substr(fq1@sread,fq_start,width(fq1))
+    fq2_trim = substr(fq2@sread,fq_end,width(fq2))
 
-  # name trimed reads the shortest unique strings of reads IDs appending with UMI sequencs
-  names(fq1_trim) = names(fq2_trim) =
-    paste0(substr(fq1@id,24,width(fq1@id)-ifelse(width(fq1@id)>60,24,15)),':',
-           substr(fq2@sread,fq_end-length(linker)-18,fq_end-length(linker)-1))
+    # name trimed reads the shortest unique strings of reads IDs appending with UMI sequencs
+    names(fq1_trim) = names(fq2_trim) =
+      paste0(substr(fq1@id,24,width(fq1@id)-ifelse(width(fq1@id)>60,24,15)),':',
+             substr(fq2@sread,fq_end-length(linker)-18,fq_end-length(linker)-1))
 
-  fq_short_idx = which(nchar(fq1_trim) < 20 | nchar(fq2_trim) < 20)
+    fq_short_idx = which(nchar(fq1_trim) < 20 | nchar(fq2_trim) < 20)
 
-  if(length(fq_short_idx) > 0){
-    fq1_trim = fq1_trim[-fq_short_idx]
-    fq2_trim = fq2_trim[-fq_short_idx]
+    if(length(fq_short_idx) > 0){
+      fq1_trim = fq1_trim[-fq_short_idx]
+      fq2_trim = fq2_trim[-fq_short_idx]
+    }
   }
 
-  reads_usable_for_sites_detection = length(fq1_trim)+length(mg_trim)
+  reads_usable_for_sites_detection =
+    ifelse(length(fq1)==0,0,length(fq1_trim))+
+    ifelse(length(mg)==0,0,length(mg_trim))
 
-  writeFasta(DNAStringSet(mg_trim),
-             paste0(outdir,'/',strsplit(basename(path2mg), "\\.")[[1]][1],'.fa'))
+  if(length(mg) !=0 ){
+    writeFasta(DNAStringSet(mg_trim),
+               paste0(outdir,'/',strsplit(basename(path2mg), "\\.")[[1]][1],'.fa'))
+  }
 
-  writeFasta(DNAStringSet(fq1_trim),
-             paste0(outdir,'/',strsplit(basename(path2fq1), "\\.")[[1]][1],'.fa'))
-
-  writeFasta(DNAStringSet(fq2_trim),
-             paste0(outdir,'/',strsplit(basename(path2fq2), "\\.")[[1]][1],'.fa'))
+  if(length(fq1) != 0){
+    writeFasta(DNAStringSet(fq1_trim),
+               paste0(outdir,'/',strsplit(basename(path2fq1), "\\.")[[1]][1],'.fa'))
+    writeFasta(DNAStringSet(fq2_trim),
+               paste0(outdir,'/',strsplit(basename(path2fq2), "\\.")[[1]][1],'.fa'))
+  }
 
   log_info = list(
     total_reads = total_reads,
