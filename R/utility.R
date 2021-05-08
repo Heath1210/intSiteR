@@ -178,10 +178,3 @@ mergeReads <- function(fq1,
                 " -I ",fq2," -O ",fq2_out," -m --merged_out ",mg_out))
 
 }
-
-
-
-
-
-
-
