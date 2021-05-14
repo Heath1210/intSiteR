@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{readBed}
 \alias{readBed}
-\title{readBed}
+\title{Read bed file}
 \usage{
 readBed(bed)
 }

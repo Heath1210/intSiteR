@@ -63,7 +63,7 @@ intBed <- function(mgBed,
   fqbed_temp$name = substr(fqbed_temp$name,1,nchar(fqbed_temp$name)-2)
 
   bed = rbind(mgbed,fqbed_temp)
-  bed = bed %>% filter(quality>20)
+  bed = bed %>% filter(quality> qThreshold)
   bed = bed %>% mutate(
     barcode = barcTrans(substr(name,nchar(name)-5,nchar(name))),
     insiteCode = paste0('B',barcode,':',chr,':',start,':',end,':',strand,':',
@@ -108,11 +108,11 @@ intBed <- function(mgBed,
                                                       mean(bed_serial[[i]]$count[1:10])/theta)
 
       log_info[[paste0(i)]] = list(
-        putative_barc = i,
-        unique_insiteCode = unique_insiteCode,
-        removed_insiteCode_count_by_UMI_distance = removed_insiteCode_count_by_UMI_distance,
-        filter_threshold_automatically_calculated =filter_threshold_automatically_calculated,
-        max_insiteCode = bed_serial[[i]]$count[1]
+        paste0('putative_barc = ',i,'\n',
+               'unique_insiteCode = ',unique_insiteCode,'\n',
+               'removed_insiteCode_count_by_UMI_distance = ',removed_insiteCode_count_by_UMI_distance,'\n',
+               'filter_threshold_automatically_calculated = ',filter_threshold_automatically_calculated,'\n',
+               'max_insiteCode = ',bed_serial[[i]]$count[1])
       )
 
       bed_serial[[i]] = bed_serial[[i]] %>% filter(count > max(fThreshold,
@@ -121,7 +121,7 @@ intBed <- function(mgBed,
       if(nrow(bed_serial[[i]])==0){
         fwrite(log_info[[paste0(i)]],
                paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_B',i,'_P2.log'),
-               sep='\t')
+               quote = FALSE)
       }else{
         bed_serial[[i]] = bed_serial[[i]] %>% mutate(breakSite = paste0('B',barcode,':',chr,':',end))
 
@@ -189,9 +189,13 @@ intBed <- function(mgBed,
             bed_merge = bed_merge[-which(bed_merge$neighbour+bed_merge$neighbour_head==1),]
           }
 
-          fwrite(bed_serial[[i]],paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_insite_',i,'.csv'))
-          fwrite(bed_merge[,1:2],paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_loc_',i,'.csv'))
-          fwrite(log_info[[paste0(i)]],paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_B',i,'_P2.log'),sep='\t')
+          fwrite(bed_serial[[i]],
+                 paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_insite_',i,'.csv'))
+          fwrite(bed_merge[,1:2],
+                 paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_loc_',i,'.csv'))
+          fwrite(log_info[[paste0(i)]],
+                 paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_B',i,'_P2.log'),
+                 quote = FALSE)
       }
       }
     }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{mergeReads}
 \alias{mergeReads}
-\title{mergeReads}
+\title{Merge paired-end Reads to single reads}
 \usage{
 mergeReads(
   fq1,
@@ -30,5 +30,5 @@ mergeReads(
 \item{threads}{number of threads used in alignment}
 }
 \description{
-Using fastp to merge reads
+Using fastp to merge paired-end Reads
 }

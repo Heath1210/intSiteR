@@ -1,4 +1,4 @@
-#' @title readBed
+#' @title Read bed file
 #'
 #' @description Read bed file
 #'
@@ -15,9 +15,9 @@ readBed <- function(bed){
 }
 
 
-#' @title closeSeqIdx
+#' @title Find duplicates based on edit distance
 #'
-#' @description Find duplicates based on edit distance
+#' @description Find duplicates' index based on edit distance
 #'
 #' @param str_vec a character vector
 #' @param len UMI length
@@ -39,7 +39,7 @@ closeSeqIdx <- function(str_vec,len){
 }
 
 
-#' @title barcTrans
+#' @title Translate barcode sequences to number
 #'
 #' @description Translate barcode sequences to number
 #'
@@ -62,7 +62,7 @@ barcTrans <- function(barc_vec,barcode = def_barcode){
 }
 
 
-#' @title alignBowtie2
+#' @title Using bowtie2 to align reads
 #'
 #' @description Using bowtie2 to align reads
 #'
@@ -97,7 +97,7 @@ alignBowtie2 <- function(fa1,
 }
 
 
-#' @title sam2bam
+#' @title Transform sam to bam
 #'
 #' @description Using samtools to transform sam to bam
 #'
@@ -120,7 +120,7 @@ sam2bam <- function(sam,
 }
 
 
-#' @title bam2bed
+#' @title Transform bam to bed
 #'
 #' @description Using bedtools to transform bam to bed
 #'
@@ -143,9 +143,9 @@ bam2bed <- function(bam,
 }
 
 
-#' @title mergeReads
+#' @title Merge paired-end Reads to single reads
 #'
-#' @description Using fastp to merge reads
+#' @description Using fastp to merge paired-end Reads
 #'
 #' @param fq1 a fastq file
 #' @param fq2 a fastq file

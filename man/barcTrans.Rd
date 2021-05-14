@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{barcTrans}
 \alias{barcTrans}
-\title{barcTrans}
+\title{Translate barcode sequences to number}
 \usage{
 barcTrans(barc_vec, barcode = def_barcode)
 }

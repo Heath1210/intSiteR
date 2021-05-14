@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{alignBowtie2}
 \alias{alignBowtie2}
-\title{alignBowtie2}
+\title{Using bowtie2 to align reads}
 \usage{
 alignBowtie2(fa1, fa2 = NULL, outdir, bowtie2 = "bowtie2", ref, threads = 8)
 }

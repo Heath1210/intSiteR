@@ -2,7 +2,7 @@
 % Please edit documentation in R/intSite.R
 \name{intSite}
 \alias{intSite}
-\title{intSite}
+\title{Fetch the integration sites from raw fastq files}
 \usage{
 intSite(
   input,
@@ -10,7 +10,7 @@ intSite(
   bowtie2 = "bowtie2",
   samtools = "samtools",
   bedtools = "bedtools",
-  mode = "filetype",
+  mode = "file",
   theta = 100,
   fThreshold = 5,
   monoSite = 50,
@@ -19,54 +19,54 @@ intSite(
 )
 }
 \arguments{
-\item{input}{a folder containing raw fastq files. Not
-supporting file path beginning with dot, as './'!!}
+\item{input}{a folder containing raw fastq files}
 
-\item{ref}{genome reference for bowtie2}
+\item{ref}{genome reference for bowtie2, including file path and file prefix}
 
-\item{bowtie2}{bowtie2 path}
+\item{bowtie2}{path to bowtie2}
 
-\item{samtools}{samtools path}
+\item{samtools}{path to samtools}
 
-\item{bedtools}{bedtools path}
+\item{bedtools}{path to bedtools}
 
 \item{mode}{output mode, whether by file type or by sample,
-value can be 'filetype' or 'sample'}
+value can be 'file' or 'sample', default by file type.}
 
-\item{theta}{a parameter controlling the looseness of filter by duplicate degree}
+\item{theta}{a parameter controlling the looseness of filter by duplicate
+degree, default is 100. Choose a bigger value if you want it to be looser,
+vice versa.}
 
-\item{fThreshold}{the minimum duplicate degree allowed for further analysis}
+\item{fThreshold}{the minimum duplicate degree allowed for further analysis,
+default is 5.}
 
 \item{monoSite}{a threshold that insiteCode with frequency above it
-will not be filtered by breaking point}
+will not be filtered by breaking point, default is 50.}
 
-\item{collapse}{whether neighboring sites collapsed to one.}
+\item{collapse}{how close the neighboring sites will collapsed to one, default
+is 7.}
 
-\item{mixBarcode}{whether samples with different barcodes mixed in one library.}
+\item{mixBarcode}{whether samples with different barcodes mixed in one library,
+default is false.}
 }
 \description{
-Fetch the integration sites from raw fastq files.
-   This package integrated mergeReads, insTrim, alignBowtie2,
-   sam2bam, bam2bed and intBed, is used for a complete processing
-   from raw fastq to integration site coordinates.
-   Alternatively, you can also analysis your data step by step,
-   in such mode you can tune lots of parameters to achieve better
-   performance.
+This package integrated mergeReads, intTrim, alignBowtie2,
+   sam2bam, bam2bed and intBed functions in this package, is used for
+   a complete processing from raw fastq to integration site coordinates.
+   Alternatively, you can also analysis your data step by step by separately
+   using above mentioned functions, in such way you can tune lots of
+   parameters to achieve better performance.
 }
 \examples{
 if(FALSE){
-  setwd('~/')
-
-  # Not supporting file path beginning with dot, like './'
-  if(!dir.exists('~/intTest')) dir.create('~/intTest')
+  dir.create('~/intTest')
 
   file.copy(from = system.file('extdata','raw',package = 'intSiteR'),
             to = '~/intTest',
             recursive = TRUE)
 
   intSite(input = '~/intTest/raw',
-          ref = '~/hg38/Homo_sapiens.GRCh38')
-          # change to your reference folder
+          ref = '~/Homo_sapiens.GRCh38', # change to your bt2 reference
+          mode = 'sample')
  }
 }
 \author{

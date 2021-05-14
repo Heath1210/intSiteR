@@ -203,15 +203,15 @@ intTrim <- function(path2fq1,
                paste0(outdir,'/',strsplit(basename(path2fq2), "\\.f")[[1]][1],'.fa'))
   }
 
-  log_info = list(
-    total_reads = total_reads,
-    merge_percentage = merge_percentage,
-    reads_matching_primers = reads_matching_primers,
-    reads_usable_for_sites_detection = reads_usable_for_sites_detection)
+  log_info = paste0('total_reads = ',total_reads,'\n',
+                    'merge_percentage = ',merge_percentage,'\n',
+                    'reads_matching_primers = ',reads_matching_primers,'\n',
+                    'reads_usable_for_sites_detection = ',reads_usable_for_sites_detection)
 
-  fwrite(log_info,
+  fwrite(list(log_info),
          paste0(outdir,'/',strsplit(basename(path2fq1), "\\.f")[[1]][1],'_P1.log'),
-         sep = '\t' )
+         quote = FALSE
+         )
 
   log_info
 

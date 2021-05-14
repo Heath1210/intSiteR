@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{sam2bam}
 \alias{sam2bam}
-\title{sam2bam}
+\title{Transform sam to bam}
 \usage{
 sam2bam(sam, outdir, samtools = "samtools")
 }

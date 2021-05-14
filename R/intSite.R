@@ -1,30 +1,34 @@
 #' @rdname intSite
-#' @title intSite
+#' @title Fetch the integration sites from raw fastq files
 #'
 #' @author Cai Haodong
 #'
-#' @description Fetch the integration sites from raw fastq files.
-#'    This package integrated mergeReads, insTrim, alignBowtie2,
-#'    sam2bam, bam2bed and intBed, is used for a complete processing
-#'    from raw fastq to integration site coordinates.
-#'    Alternatively, you can also analysis your data step by step,
-#'    in such mode you can tune lots of parameters to achieve better
-#'    performance.
+#' @description This package integrated mergeReads, intTrim, alignBowtie2,
+#'    sam2bam, bam2bed and intBed functions in this package, is used for
+#'    a complete processing from raw fastq to integration site coordinates.
+#'    Alternatively, you can also analysis your data step by step by separately
+#'    using above mentioned functions, in such way you can tune lots of
+#'    parameters to achieve better performance.
 #'
-#' @param input a folder containing raw fastq files. Not
-#'     supporting file path beginning with dot, as './'!!
-#' @param ref genome reference for bowtie2
-#' @param bowtie2 bowtie2 path
-#' @param samtools samtools path
-#' @param bedtools bedtools path
+#' @param input a folder containing raw fastq files
+#' @param ref genome reference for bowtie2, including file path and file prefix
+#' @param bowtie2 path to bowtie2
+#' @param samtools path to samtools
+#' @param bedtools path to bedtools
 #' @param mode output mode, whether by file type or by sample,
-#'     value can be 'filetype' or 'sample'
-#' @param theta a parameter controlling the looseness of filter by duplicate degree
-#' @param fThreshold the minimum duplicate degree allowed for further analysis
+#'     value can be 'file' or 'sample', default by file type.
+#' @param theta a parameter controlling the looseness of filter by duplicate
+#'     degree, default is 100. Choose a bigger value if you want it to be looser,
+#'     vice versa.
+#' @param fThreshold the minimum duplicate degree allowed for further analysis,
+#'     default is 5.
 #' @param monoSite a threshold that insiteCode with frequency above it
-#'     will not be filtered by breaking point
-#' @param collapse whether neighboring sites collapsed to one.
-#' @param mixBarcode whether samples with different barcodes mixed in one library.
+#'     will not be filtered by breaking point, default is 50.
+#' @param collapse how close the neighboring sites will collapsed to one, default
+#'     is 7.
+#' @param mixBarcode whether samples with different barcodes mixed in one library,
+#'     default is false.
+#'
 #'
 #' @importFrom stringr str_match
 #' @importFrom stringr str_replace
@@ -40,18 +44,15 @@
 #'
 #' @examples
 #' if(FALSE){
-#'   setwd('~/')
-#'
-#'   # Not supporting file path beginning with dot, like './'
-#'   if(!dir.exists('~/intTest')) dir.create('~/intTest')
+#'   dir.create('~/intTest')
 #'
 #'   file.copy(from = system.file('extdata','raw',package = 'intSiteR'),
 #'             to = '~/intTest',
 #'             recursive = TRUE)
 #'
 #'   intSite(input = '~/intTest/raw',
-#'           ref = '~/hg38/Homo_sapiens.GRCh38')
-#'           # change to your reference folder
+#'           ref = '~/Homo_sapiens.GRCh38', # change to your bt2 reference
+#'           mode = 'sample')
 #'  }
 #' @export
 
@@ -61,7 +62,7 @@ intSite <- function(input,
                     bowtie2 = 'bowtie2',
                     samtools = 'samtools',
                     bedtools = 'bedtools',
-                    mode = 'filetype',
+                    mode = 'file',
                     theta = 100,
                     fThreshold = 5,
                     monoSite = 50,
@@ -78,8 +79,8 @@ intSite <- function(input,
   stopifnot('Please check your fastq pairs!'= raw_r1 == raw_r2)
 
   if(mode != 'sample'){
-    if(mode != 'filetype') {
-      print('You did not choose a right output mode, it will run as filetype mode.')}
+    if(mode != 'file') {
+      print('You did not choose a right output mode, it will run as file mode.')}
 
     # raw data QC and merge reads
     fp_out <- path(dirname(input),'1fastp')

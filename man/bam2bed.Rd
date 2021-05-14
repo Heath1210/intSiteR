@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{bam2bed}
 \alias{bam2bed}
-\title{bam2bed}
+\title{Transform bam to bed}
 \usage{
 bam2bed(bam, outdir, bedtools = "bedtools")
 }

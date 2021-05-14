@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility.R
 \name{closeSeqIdx}
 \alias{closeSeqIdx}
-\title{closeSeqIdx}
+\title{Find duplicates based on edit distance}
 \usage{
 closeSeqIdx(str_vec, len)
 }
@@ -12,5 +12,5 @@ closeSeqIdx(str_vec, len)
 \item{len}{UMI length}
 }
 \description{
-Find duplicates based on edit distance
+Find duplicates' index based on edit distance
 }
