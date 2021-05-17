@@ -130,7 +130,7 @@ intBed <- function(mgBed,
 
         sum_intBreak_table = data.frame(table(sum_intBreak$insite))
 
-        multi_break = filter(sum_intBreak_table,Freq >50)$Var1 %>% as.character()
+        multi_break = filter(sum_intBreak_table,Freq > monoSite)$Var1 %>% as.character()
 
         bed_serial[[i]] = bed_serial[[i]] %>%
           mutate(multiBreak = ifelse(insite %in% multi_break,1,0),

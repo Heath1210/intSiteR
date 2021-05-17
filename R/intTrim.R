@@ -86,10 +86,10 @@ intTrim <- function(path2fq1,
   mg_match_idx = intersect(mg_match_LTR,mg_match_linker)
 
   # negatively filter reads that can be matched with vector sequences that close to LTR
-  mg_match_avs1 = ifelse(is.null(avoidseq1),rep(0,length(mg)),
+  mg_match_avs1 = ifelse(rep(is.null(avoidseq1),length(mg)),rep(0,length(mg)),
                          vcountPattern(avoidseq1,mg@sread,max.mismatch=3))
 
-  mg_match_avs2 = ifelse(is.null(avoidseq2),rep(0,length(mg)),
+  mg_match_avs2 = ifelse(rep(is.null(avoidseq2),length(mg)),rep(0,length(mg)),
                          vcountPattern(avoidseq2,mg@sread,max.mismatch=5))
 
   mg_match_avs = which(mg_match_avs1 + mg_match_avs2 > 0)
@@ -150,10 +150,10 @@ intTrim <- function(path2fq1,
   reads_matching_primers = length(mg_match_idx)+length(fq_match_idx)
 
   # the index of PE reads that can be matched with vector sequences that close to LTR
-  fq_match_avs1 = ifelse(is.null(avoidseq1),rep(0,length(fq1)),
+  fq_match_avs1 = ifelse(rep(is.null(avoidseq1),length(fq1)),rep(0,length(fq1)),
                          vcountPattern(avoidseq1,fq1@sread,max.mismatch=3))
 
-  fq_match_avs2 = ifelse(is.null(avoidseq2),rep(0,length(fq1)),
+  fq_match_avs2 = ifelse(rep(is.null(avoidseq2),length(fq1)),rep(0,length(fq1)),
                          vcountPattern(avoidseq2,fq1@sread,max.mismatch=5))
 
   fq_match_avs = which(fq_match_avs1 + fq_match_avs2 > 0)
