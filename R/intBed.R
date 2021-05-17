@@ -83,10 +83,12 @@ intBed <- function(mgBed,
     barcode_table = data.frame(table(bed$barcode))
     bed_serial = list()
 
-    putative_barc = ifelse(mixBarcode,
-                          as.character(filter(barcode_table,Freq/sum(Freq) > 0.05)$Var1),
-                          as.character(arrange(barcode_table,desc(Freq))$Var1[1])) %>%
-      as.numeric()
+    if(mixBarcode){
+      putative_barc = as.character(filter(barcode_table,Freq/sum(Freq) > 0.05)$Var1) %>% as.numeric()
+    }else{
+      putative_barc = as.character(arrange(barcode_table,desc(Freq))$Var1[1]) %>% as.numeric()
+    }
+
 
     log_info = list()
 
