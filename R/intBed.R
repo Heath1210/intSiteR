@@ -107,8 +107,9 @@ intBed <- function(mgBed,
 
       removed_insiteCode_count_by_UMI_distance = nrow(insiteCode_table)-unique_insiteCode
 
-      filter_threshold_automatically_calculated = max(fThreshold,
-                                                      mean(bed_serial[[i]]$count[1:10])/theta)
+	    putative_threshold = mean(bed_serial[[i]]$count[1:10])/theta
+
+      filter_threshold_automatically_calculated = max(fThreshold,putative_threshold)
 
       log_info[[paste0(i)]] = list(
         paste0('putative_barc = ',i,'\n',
@@ -118,10 +119,13 @@ intBed <- function(mgBed,
                'max_insiteCode = ',bed_serial[[i]]$count[1])
       )
 
+
+
+
       bed_serial[[i]] = bed_serial[[i]] %>% filter(count > max(fThreshold,
                                                                mean(sort(count,decreasing = TRUE)[1:10])/theta))
 
-      if(nrow(bed_serial[[i]])==0){
+      if(putative_threshold < 1 | nrow(bed_serial[[i]])==0){
         fwrite(log_info[[paste0(i)]],
                paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_B',i,'_P2.log'),
                quote = FALSE)
