@@ -92,7 +92,7 @@ intSite <- function(input,
            fq1_out = paste0(fp_out,'/',raw_r1,'_R1.fq'),
            fq2_out = paste0(fp_out,'/',raw_r1,'_R2.fq'),
            mg_out = paste0(fp_out,'/',raw_r1,'_merge.fq'),
-           threads = num_threads)
+           threads = 3)
 
     # trim reads
     fa_out <- path(dirname(input),'2fasta')
@@ -183,7 +183,7 @@ intSite <- function(input,
            fq1_out = paste0(my_pwd,'/output/',raw_r1,'_R1.fq'),
            fq2_out = paste0(my_pwd,'/output/',raw_r1,'_R2.fq'),
            mg_out = paste0(my_pwd,'/output/',raw_r1,'_merge.fq'),
-           threads = num_threads)
+           threads = 3)
 
     # trim the LTR and linker
     mcmapply(intTrim,

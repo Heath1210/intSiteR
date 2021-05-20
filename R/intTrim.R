@@ -213,6 +213,8 @@ intTrim <- function(path2fq1,
          quote = FALSE
          )
 
+  gc()
+
   log_info
 
 }
