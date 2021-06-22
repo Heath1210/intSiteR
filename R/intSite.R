@@ -92,7 +92,7 @@ intSite <- function(input,
            fq1_out = paste0(fp_out,'/',raw_r1,'_R1.fq'),
            fq2_out = paste0(fp_out,'/',raw_r1,'_R2.fq'),
            mg_out = paste0(fp_out,'/',raw_r1,'_merge.fq'),
-           threads = 3)
+           threads = num_threads)
 
     # trim reads
     fa_out <- path(dirname(input),'2fasta')
@@ -103,7 +103,7 @@ intSite <- function(input,
              path2fq2 = paste0(fp_out,'/',raw_r1,'_R2.fq'),
              path2mg = paste0(fp_out,'/',raw_r1,'_merge.fq'),
              outdir = fa_out,
-             mc.cores = num_threads)
+             mc.cores = 3)
 
     # align
     sam_out <- path(dirname(input),'3sam')
@@ -183,7 +183,7 @@ intSite <- function(input,
            fq1_out = paste0(my_pwd,'/output/',raw_r1,'_R1.fq'),
            fq2_out = paste0(my_pwd,'/output/',raw_r1,'_R2.fq'),
            mg_out = paste0(my_pwd,'/output/',raw_r1,'_merge.fq'),
-           threads = 3)
+           threads = num_threads)
 
     # trim the LTR and linker
     mcmapply(intTrim,
@@ -191,7 +191,7 @@ intSite <- function(input,
              path2fq2 = paste0(my_pwd, "/output/", raw_r1, "_R2.fq"),
              path2mg = paste0(my_pwd, "/output/", raw_r1, "_merge.fq"),
              outdir = paste0(my_pwd,'/output'),
-             mc.cores = num_threads)
+             mc.cores = 3)
 
     # align
     mapply(alignBowtie2,

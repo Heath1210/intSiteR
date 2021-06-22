@@ -129,8 +129,15 @@ intBed <- function(mgBed,
         fwrite(log_info[[paste0(i)]],
                paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_B',i,'_P2.log'),
                quote = FALSE)
+
+        fwrite(filter(bed_serial[[i]],count==-1),
+               paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_insite_',i,'.csv'))
+
+        fwrite(data.frame(coordinate=NA,frequency=NA),
+               paste0(outdir,'/',strsplit(basename(fqBed),"\\.")[[1]][1],'_loc_',i,'.csv'))
+
       }else{
-        bed_serial[[i]] = bed_serial[[i]] %>% mutate(breakSite = paste0('B',barcode,':',chr,':',end))
+        bed_serial[[i]] = bed_serial[[i]] %>% mutate(breakSite = paste0('B',barcode,':',chr,':',ifelse(strand=='+',end,start)))
 
         sum_intBreak = summarise(group_by(bed_serial[[i]],insite,breakSite))
 
